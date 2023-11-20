@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  api:
+    # コンテナ名を指定する
+    container_name: api
+    # ビルドするDockerfileの場所を指定する
+    build: ./api
+    # コンテナのポートを指定する
+    ports:
+      - 8080:8080
+    # bashが終了してコンテナが終了するのを防ぐためのオプション
+    tty: true
+    # ローカルPCでの作業ディレクトリを./apiに指定し、コンテナ内の作業ディレクトリを/workspaceに指定する
+    # :cachedオプションでキャッシュを有効にして、コンテナの応答スピードを上げる
+    volumes:
+      - ./api:/workspace:cached
+
+  web:
+    container_name: web
+    build: ./web
+    ports:
+      - 3000:3000
+    tty: true
+    volumes:
+      - ./web:/workspace:cached
+    # webコンテナがapiコンテナに依存するようにする
+    depends_on:
+      - api
