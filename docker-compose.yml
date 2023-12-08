@@ -2,26 +2,34 @@ version: "3.9"
 
 services:
   api:
-    # コンテナ名を指定する
+    # コンテナ名を指定する -> Dockerコマンド `docker container --name ****` と同じ
     container_name: api
-    # ビルドするDockerfileの場所を指定する
+    # ビルドコンテキスト（ビルドするDockerfileまでのパス）を指定する
     build: ./api
-    # コンテナのポートを指定する
+    # コンテナのポートを指定する -> Dockerコマンド `docker container run -p {ホスト側のPORT}:{コンテナ側のPORT}` と同じ
     ports:
       - 8080:8080
-    # bashが終了してコンテナが終了するのを防ぐためのオプション
+    # Dockerfileで CMD に ["bash"] を指定してbashが起動するような設定にしている場合、bashは何も入力がなければプロセスが終了してしまう -> この挙動を回避するためにttyをtrueにしてbashのプロセスが終了してもコンテナが終了しないようにしている
+    # -> Dockerコマンド `docker container -it ****` で -it オプションを付与しているのと同じ
     tty: true
-    # ローカルPCでの作業ディレクトリを./apiに指定し、コンテナ内の作業ディレクトリを/workspaceに指定する
-    # :cachedオプションでキャッシュを有効にして、コンテナの応答スピードを上げる
+    # バインドマウントを設定している -> ローカルPCでの作業ディレクトリを./apiに指定し、コンテナ内の作業ディレクトリを/workspaceに指定する
+    # :cached -> ボリュームをマウントする際のオプション キャッシュを有効にしてコンテナの応答スピードを上げるための指定
     volumes:
       - ./api:/workspace:cached
 
   web:
     container_name: web
-    build: ./web
+    build:
+      # ビルドコンテキストを指定する -> Dockerfileまでのパスを指定する
+      context: ./web
+      # Dockerfile内に定義されてimageを指定する -> Dockerfile内でFROMで指定したイメージ名を指定する
+      target: base
     ports:
       - 3000:3000
     tty: true
+    # 環境変数を設定する -> ここで設定した環境変数の値は アプリケーション内で process.env.REACT_APP_API_SERVER として参照できる
+    environment:
+      - REACT_APP_API_SERVER=http://localhost:8080/api
     volumes:
       - ./web:/workspace:cached
     # webコンテナがapiコンテナに依存するようにする
